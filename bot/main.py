@@ -2,16 +2,17 @@ import json
 from pathlib import Path
 
 import random
-
+import math
 import sc2
 from sc2.constants import *
 
 from sc2.position import Point2
 
 trashtalk = [
-    "There are about 37 trillion cells working together in your body right now, and you are disappointing every single one of them.",
+    "Did you know sharks only kill 5 people each year? Looks like you got some competition",
     "I'd call you a tool, but that would imply you were useful in at least one way.",
     "You're the type of player to get 3rd place in a 1v1 match",
+    "I'd love to see things from your perspective, but I don't think I could shove my head that far up my ass.",
     "Legend has it that the number 0 was first invented after scientists calculated your chance of doing something useful."
 ]
 
@@ -24,20 +25,23 @@ class MyBot(sc2.BotAI):
         self.attempted_proxy_locations = []
 
     async def on_step(self, iteration):
-        if iteration == 0:
-            await self.chat_send(f"{random.choice(trashtalk)}")
+        try:
+            if iteration == 0:
+                await self.chat_send(f"{random.choice(trashtalk)}")
 
-        await self.distribute_workers()
-        await self.build_supply()
-        await self.build_workers()
-        await self.build_vespene()
-        await self.expand()
-        await self.build_strategy()
-        await self.build_warpgates()
-        await self.spam_stalkers()
-        await self.build_cannons()
-        await self.handle_chrono_boost()
-        await self.build_proxies()
+            await self.distribute_workers()
+            await self.build_supply()
+            await self.build_workers()
+            await self.build_vespene()
+            await self.expand()
+            await self.build_warpgates()
+            await self.spam_stalkers()
+            await self.build_proxies()
+            await self.handle_chrono_boost()
+            await self.build_strategy()
+            await self.build_cannons()
+        except (Exception):
+            pass
 
     async def build_workers(self):
         allowed_excess = 4
@@ -55,6 +59,7 @@ class MyBot(sc2.BotAI):
             location = await self.get_next_expansion()
             if location is not None:
                 await self.build(UnitTypeId.NEXUS, near=location)
+                await self.build(UnitTypeId.PYLON, near=location)
 
     async def build_supply(self):
         ccs = self.units(UnitTypeId.NEXUS).ready
@@ -100,8 +105,9 @@ class MyBot(sc2.BotAI):
                 await self.do(worker.build(UnitTypeId.ASSIMILATOR, vg))
 
     async def build_strategy(self):
-        if not self.has_building(UnitTypeId.FORGE):
-            await self.build_structure(UnitTypeId.FORGE, self.units(UnitTypeId.NEXUS)[0])
+        if len(self.townhalls) > 1:
+            if not self.has_building(UnitTypeId.FORGE):
+                await self.build_structure(UnitTypeId.FORGE, self.units(UnitTypeId.NEXUS)[0])
 
     async def build_structure(self, building, near):
         if self.units(UnitTypeId.PYLON).ready.exists:
@@ -208,3 +214,26 @@ class MyBot(sc2.BotAI):
         if idle_stalkers.amount >= 10:
             for stalker in idle_stalkers:
                 await self.do(stalker.attack(self.enemy_start_locations[0]))
+
+    async def get_closest_enemy_expansion(self):
+        """Find next expansion location."""
+
+        closest = None
+        distance = math.inf
+        for el in self.expansion_locations:
+            def is_near_to_expansion(t):
+                return t.position.distance_to(el) < self.EXPANSION_GAP_THRESHOLD
+
+            if any(map(is_near_to_expansion, self.enemy_start_locations[0])):
+                # already taken
+                continue
+
+            th = self.townhalls.first
+            d = await self._client.query_pathing(self.enemy_start_locations[0], el)
+            if d is None:
+                continue
+
+            if d < distance:
+                distance = d
+                closest = el
+        return closest
