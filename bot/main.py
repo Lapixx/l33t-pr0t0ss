@@ -12,7 +12,7 @@ class MyBot(sc2.BotAI):
 
     async def on_step(self, iteration):
         if iteration == 0:
-            await self.chat_send(f"Name: {self.NAME}")
+            await self.chat_send(f"I'd call you a tool, but that would imply you were useful in at least one way.")
 
             # available_workers = self.workers
             #
@@ -29,6 +29,7 @@ class MyBot(sc2.BotAI):
         await self.build_workers()
         await self.build_vespene()
         await self.expand()
+        await self.build_strategy()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -90,4 +91,18 @@ class MyBot(sc2.BotAI):
 
                 await self.do(worker.build(UnitTypeId.ASSIMILATOR, vg))
 
+    async def build_strategy(self):
+        if not self.has_building(UnitTypeId.FORGE):
+            await self.build_structure(self.units(UnitTypeId.NEXUS)[0], UnitTypeId.FORGE)
 
+        if self.has_building(UnitTypeId.FORGE):
+            await self.build_structure(self.units(UnitTypeId.NEXUS)[0], UnitTypeId.PHOTONCANNON)
+
+   async def build_structure(self, near, building):
+        if self.units(UnitTypeId.PYLON).ready.exists:
+            pylon = self.units(UnitTypeId.PYLON).closest_to(near)
+            if self.can_afford(building):
+                await self.build(building, near=pylon)
+
+    def has_building(self, unit_type):
+        return self.already_pending(unit_type) or self.units(unit_type).ready.exists
