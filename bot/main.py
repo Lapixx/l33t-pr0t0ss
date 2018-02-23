@@ -30,8 +30,10 @@ class MyBot(sc2.BotAI):
         await self.expand()
 
     async def build_workers(self):
+        allowed_excess = 4
         for cc in self.units(UnitTypeId.NEXUS).ready.noqueue:
-            if cc.assigned_harvesters < cc.ideal_harvesters:
+            excess = cc.assigned_harvesters - cc.ideal_harvesters
+            if excess < allowed_excess:
                 if self.can_afford(UnitTypeId.PROBE):
                     await self.do(cc.train(UnitTypeId.PROBE))
 
@@ -69,7 +71,7 @@ class MyBot(sc2.BotAI):
         excess = 0
         for cc in self.units(UnitTypeId.NEXUS).ready:
             excess = excess + cc.assigned_harvesters - cc.ideal_harvesters
-        if excess >= 0 and self.units(UnitTypeId.NEXUS).amount < 10 and self.can_afford(UnitTypeId.NEXUS) and not self.already_pending(UnitTypeId.NEXUS):
+        if excess >= 4 and self.units(UnitTypeId.NEXUS).amount < 10 and self.can_afford(UnitTypeId.NEXUS) and not self.already_pending(UnitTypeId.NEXUS):
             location = await self.get_next_expansion()
             if location is not None:
                 await self.build(UnitTypeId.NEXUS, near=location)
