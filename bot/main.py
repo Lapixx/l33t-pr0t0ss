@@ -27,6 +27,7 @@ class MyBot(sc2.BotAI):
         await self.distribute_workers()
         await self.build_supply()
         await self.build_workers()
+        await self.build_vespene()
         await self.expand()
 
     async def build_workers(self):
@@ -53,3 +54,40 @@ class MyBot(sc2.BotAI):
             if self.supply_left < 4 and not self.already_pending(UnitTypeId.PYLON):
                 if self.can_afford(UnitTypeId.PYLON):
                     await self.build(UnitTypeId.PYLON, near=cc.position.towards(self.game_info.map_center, 5))
+
+    async def build_vespene(self):
+
+        # create workers for existing assimilators
+        for assim in self.geysers:
+            if assim.assigned_harvesters < assim.ideal_harvesters:
+                if self.can_afford(UnitTypeId.PROBE):
+                    ccs = self.townhalls.ready.noqueue.prefer_close_to(assim.position)
+                    if len(ccs) >= 1:
+                        await self.do(ccs[0].train(UnitTypeId.PROBE))
+
+        # check if there are unsaturated assimilators first (or a new one is already pending)
+        vesp_workers_needed = 0
+        for assim in self.geysers:
+            vesp_workers_needed = vesp_workers_needed + assim.ideal_harvesters - assim.assigned_harvesters
+        if vesp_workers_needed > 0 or self.already_pending(UnitTypeId.ASSIMILATOR):
+            return
+
+        for nexus in self.townhalls.ready:
+            # only create assims when there is enough mineral gathering going on
+            if nexus.assigned_harvesters < 12 and not nexus.assigned_harvesters >= nexus.ideal_harvesters:
+                break
+            vgs = self.state.vespene_geyser.closer_than(20.0, nexus)
+            for vg in vgs:
+                if self.units(UnitTypeId.ASSIMILATOR).closer_than(1.0, vg).exists:
+                    break
+
+                if not self.can_afford(UnitTypeId.ASSIMILATOR):
+                    break
+
+                worker = self.select_build_worker(vg.position)
+                if worker is None:
+                    break
+
+                await self.do(worker.build(UnitTypeId.ASSIMILATOR, vg))
+
+
