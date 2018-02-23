@@ -98,9 +98,9 @@ class MyBot(sc2.BotAI):
 
     async def build_strategy(self):
         if not self.has_building(UnitTypeId.FORGE):
-            await self.build_structure(self.units(UnitTypeId.NEXUS)[0], UnitTypeId.FORGE)
+            await self.build_structure(UnitTypeId.FORGE, self.units(UnitTypeId.NEXUS)[0])
 
-    async def build_structure(self, near, building):
+    async def build_structure(self, building, near):
         if self.units(UnitTypeId.PYLON).ready.exists:
             pylon = self.units(UnitTypeId.PYLON).closest_to(near)
             if self.can_afford(building):
@@ -112,7 +112,7 @@ class MyBot(sc2.BotAI):
             for nexus in nexuses:
                 pylons = self.units(UnitTypeId.PYLON).closer_than(20, nexus)
                 if len(pylons) is not 0 and len(self.units(UnitTypeId.PHOTONCANNON).closer_than(20, pylons.first)) <= 2:
-                    await self.build_structure(pylons.first, UnitTypeId.PHOTONCANNON)
+                    await self.build_structure(UnitTypeId.PHOTONCANNON, pylons.first)
 
     def has_building(self, unit_type):
         return self.already_pending(unit_type) or self.units(unit_type).ready.exists
@@ -120,7 +120,7 @@ class MyBot(sc2.BotAI):
     async def build_if_missing(self, unit_type, near):
         if not self.has_building(unit_type) and not self.already_pending(unit_type):
             if self.can_afford(unit_type):
-                await self.build_structure(near, unit_type)
+                await self.build_structure(unit_type, near)
 
     async def build_warpgates(self):
 
