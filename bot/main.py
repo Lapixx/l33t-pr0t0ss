@@ -22,6 +22,7 @@ class MyBot(sc2.BotAI):
         await self.expand()
         await self.build_strategy()
         await self.build_warpgates()
+        await self.spam_stalkers()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -124,3 +125,18 @@ class MyBot(sc2.BotAI):
             abilities = await self.get_available_abilities(gateway)
             if AbilityId.MORPH_WARPGATE in abilities and self.can_afford(AbilityId.MORPH_WARPGATE):
                 await self.do(gateway(AbilityId.MORPH_WARPGATE))
+
+    async def spam_stalkers(self):
+        if not self.units(UnitTypeId.PYLON).ready.exists:
+            return
+        # proxy = self.units(UnitTypeId.PYLON).ready.closest_to(self.enemy_start_locations[0])
+        for warpgate in self.units(UnitTypeId.WARPGATE).ready:
+            abilities = await self.get_available_abilities(warpgate)
+            if AbilityId.WARPGATETRAIN_STALKER in abilities:
+                proxy = self.units(UnitTypeId.PYLON).ready.random
+                if proxy is None:
+                    break
+                placement = await self.find_placement(AbilityId.WARPGATETRAIN_STALKER, proxy.position.to2, placement_step=1)
+                if placement is None:
+                    break
+                await self.do(warpgate.warp_in(UnitTypeId.STALKER, placement))
