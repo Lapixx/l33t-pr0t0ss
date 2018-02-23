@@ -161,4 +161,4 @@ class MyBot(sc2.BotAI):
         idle_stalkers = self.units(UnitTypeId.STALKER).idle
         if idle_stalkers.amount >= 1:
             for stalker in idle_stalkers:
-                await stalker.attack(self.enemy_start_locations[0])
+                await self.do(stalker.attack(self.enemy_start_locations[0]))
