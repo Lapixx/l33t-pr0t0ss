@@ -51,7 +51,7 @@ class MyBot(sc2.BotAI):
     async def build_supply(self):
         ccs = self.units(UnitTypeId.NEXUS).ready
         if ccs.exists:
-            cc = ccs.first
+            cc = ccs.random
             if self.supply_left < 4 and not self.already_pending(UnitTypeId.PYLON):
                 if self.can_afford(UnitTypeId.PYLON):
                     await self.build(UnitTypeId.PYLON, near=cc.position.towards(self.game_info.map_center, 5))
