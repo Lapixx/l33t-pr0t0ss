@@ -9,9 +9,10 @@ from sc2.constants import *
 from sc2.position import Point2
 
 trashtalk = [
-    "There are about 37 trillion cells working together in your body right now, and you are disappointing every single one of them.",
+    "Did you know sharks only kill 5 people each year? Looks like you got some competition",
     "I'd call you a tool, but that would imply you were useful in at least one way.",
     "You're the type of player to get 3rd place in a 1v1 match",
+    "I'd love to see things from your perspective, but I don't think I could shove my head that far up my ass.",
     "Legend has it that the number 0 was first invented after scientists calculated your chance of doing something useful."
 ]
 
@@ -23,18 +24,23 @@ class MyBot(sc2.BotAI):
         self.warpgate_research_started = False
 
     async def on_step(self, iteration):
-        if iteration == 0:
-            await self.chat_send(f"{random.choice(trashtalk)}")
+        try:
+            if iteration == 0:
+                await self.chat_send(f"{random.choice(trashtalk)}")
 
-        await self.distribute_workers()
-        await self.build_supply()
-        await self.build_workers()
-        await self.build_vespene()
-        await self.expand()
-        await self.build_strategy()
-        await self.build_warpgates()
-        await self.spam_stalkers()
-        await self.build_cannons()
+
+            await self.distribute_workers()
+            await self.build_supply()
+            await self.build_workers()
+            await self.build_vespene()
+            await self.expand()
+            await self.build_warpgates()
+            await self.spam_stalkers()
+            if len(self.townhalls) > 1:
+                await self.build_strategy()
+                await self.build_cannons()
+        except (Exception):
+            pass
 
     async def build_workers(self):
         allowed_excess = 4
@@ -52,6 +58,7 @@ class MyBot(sc2.BotAI):
             location = await self.get_next_expansion()
             if location is not None:
                 await self.build(UnitTypeId.NEXUS, near=location)
+                await self.build(UnitTypeId.PYLON, near=location)
 
     async def build_supply(self):
         ccs = self.units(UnitTypeId.NEXUS).ready
