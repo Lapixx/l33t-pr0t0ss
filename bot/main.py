@@ -140,3 +140,8 @@ class MyBot(sc2.BotAI):
                 if placement is None:
                     break
                 await self.do(warpgate.warp_in(UnitTypeId.STALKER, placement))
+
+        idle_stalkers = self.units(UnitTypeId.STALKER).idle
+        if idle_stalkers.amount >= 1:
+            for stalker in idle_stalkers:
+                await stalker.attack(self.enemy_start_locations[0])
