@@ -159,6 +159,9 @@ class MyBot(sc2.BotAI):
                 await self.do(warpgate.warp_in(UnitTypeId.STALKER, placement))
 
         idle_stalkers = self.units(UnitTypeId.STALKER).idle
-        if idle_stalkers.amount >= 1:
+        for stalker in idle_stalkers:
+            if self.units(UnitTypeId.PYLON).closer_than(5.0, stalker).exists:
+                await self.do(stalker.move(stalker.position.towards(self.game_info.map_center, 10)))
+        if idle_stalkers.amount >= 10:
             for stalker in idle_stalkers:
                 await self.do(stalker.attack(self.enemy_start_locations[0]))
