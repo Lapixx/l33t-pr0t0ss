@@ -98,7 +98,7 @@ class MyBot(sc2.BotAI):
         if self.has_building(UnitTypeId.FORGE):
             await self.build_structure(self.units(UnitTypeId.NEXUS)[0], UnitTypeId.PHOTONCANNON)
 
-   async def build_structure(self, near, building):
+    async def build_structure(self, near, building):
         if self.units(UnitTypeId.PYLON).ready.exists:
             pylon = self.units(UnitTypeId.PYLON).closest_to(near)
             if self.can_afford(building):
