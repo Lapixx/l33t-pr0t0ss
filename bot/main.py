@@ -1,10 +1,19 @@
 import json
 from pathlib import Path
 
+import random
+
 import sc2
 from sc2.constants import *
 
 from sc2.position import Point2
+
+trashtalk = [
+    "There are about 37 trillion cells working together in your body right now, and you are disappointing every single one of them.",
+    "I'd call you a tool, but that would imply you were useful in at least one way.",
+    "You're the type of player to get 3rd place in a 1v1 match",
+    "Legend has it that the number 0 was first invented after scientists calculated your chance of doing something useful."
+]
 
 class MyBot(sc2.BotAI):
     with open(Path(__file__).parent / "../botinfo.json") as f:
@@ -12,7 +21,7 @@ class MyBot(sc2.BotAI):
 
     async def on_step(self, iteration):
         if iteration == 0:
-            await self.chat_send(f"I'd call you a tool, but that would imply you were useful in at least one way.")
+            await self.chat_send(f"{random.choice(trashtalk)}")
 
             # available_workers = self.workers
             #
@@ -31,6 +40,7 @@ class MyBot(sc2.BotAI):
         await self.expand()
         await self.build_strategy()
         await self.build_cannons()
+        await self.upgrade_weapons()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -106,8 +116,8 @@ class MyBot(sc2.BotAI):
         if self.has_building(UnitTypeId.FORGE):
             nexuses = self.townhalls
             for nexus in nexuses:
-                pylons = self.units(UnitTypeId.PYLON).closer_than(8, nexus)
-                if len(pylons) is not 0 and len(self.units(UnitTypeId.PHOTONCANNON).closer_than(8, pylons.first)) <= 2:
+                pylons = self.units(UnitTypeId.PYLON).closer_than(20, nexus)
+                if len(pylons) is not 0 and len(self.units(UnitTypeId.PHOTONCANNON).closer_than(20, pylons.first)) <= 2:
                     await self.build_structure(pylons.first, UnitTypeId.PHOTONCANNON)
 
     def has_building(self, unit_type):
