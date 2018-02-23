@@ -28,16 +28,31 @@ class MyBot(sc2.BotAI):
         try:
             if iteration == 0:
                 await self.chat_send(f"{random.choice(trashtalk)}")
+        except (Exception):
+            pass
 
+        try:
             await self.distribute_workers()
             await self.build_supply()
             await self.build_workers()
             await self.build_vespene()
             await self.expand()
+        except (Exception):
+            pass
+
+        try:
+            await self.handle_chrono_boost()
+        except (Exception):
+            pass
+
+        try:
             await self.build_warpgates()
             await self.spam_stalkers()
             await self.build_proxies()
-            await self.handle_chrono_boost()
+        except (Exception):
+            pass
+
+        try:
             await self.build_strategy()
             await self.build_cannons()
         except (Exception):
