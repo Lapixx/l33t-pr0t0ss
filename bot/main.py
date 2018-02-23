@@ -21,6 +21,7 @@ class MyBot(sc2.BotAI):
 
     def __init__(self):
         self.warpgate_research_started = False
+        self.attempted_proxy_locations = []
 
     async def on_step(self, iteration):
         if iteration == 0:
@@ -36,6 +37,7 @@ class MyBot(sc2.BotAI):
         await self.spam_stalkers()
         await self.build_cannons()
         await self.handle_chrono_boost()
+        await self.build_proxies()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -166,16 +168,31 @@ class MyBot(sc2.BotAI):
             if AbilityId.MORPH_WARPGATE in abilities and self.can_afford(AbilityId.MORPH_WARPGATE):
                 await self.do(gateway(AbilityId.MORPH_WARPGATE))
 
+    async def build_proxies(self):
+        total_gates = self.units(UnitTypeId.GATEWAY).amount + self.units(UnitTypeId.WARPGATE).amount
+        if total_gates < 2:
+            return
+
+        expansions = self.expansion_locations
+        for exp in expansions:
+            if not exp in self.attempted_proxy_locations:
+                if self.can_afford(UnitTypeId.PYLON):
+                    await self.build(UnitTypeId.PYLON, near=exp)
+                    self.attempted_proxy_locations.append(exp)
+
     async def spam_stalkers(self):
         if not self.units(UnitTypeId.PYLON).ready.exists:
             return
-        # proxy = self.units(UnitTypeId.PYLON).ready.closest_to(self.enemy_start_locations[0])
+
+        # find pylon closest to enemy
+        proxy = self.units(UnitTypeId.PYLON).ready.closest_to(self.enemy_start_locations[0])
+        if proxy is None:
+            return
+
+        # warp in stalkers
         for warpgate in self.units(UnitTypeId.WARPGATE).ready:
             abilities = await self.get_available_abilities(warpgate)
             if AbilityId.WARPGATETRAIN_STALKER in abilities:
-                proxy = self.units(UnitTypeId.PYLON).ready.random
-                if proxy is None:
-                    break
                 placement = await self.find_placement(AbilityId.WARPGATETRAIN_STALKER, proxy.position.to2, placement_step=1)
                 if placement is None:
                     break
@@ -183,8 +200,11 @@ class MyBot(sc2.BotAI):
 
         idle_stalkers = self.units(UnitTypeId.STALKER).idle
         for stalker in idle_stalkers:
+            # move stalkers away from pylons
             if self.units(UnitTypeId.PYLON).closer_than(5.0, stalker).exists:
                 await self.do(stalker.move(stalker.position.towards(self.game_info.map_center, 10)))
+
+        # attack when 10 stalkers are available
         if idle_stalkers.amount >= 10:
             for stalker in idle_stalkers:
                 await self.do(stalker.attack(self.enemy_start_locations[0]))
