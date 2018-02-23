@@ -151,7 +151,7 @@ class MyBot(sc2.BotAI):
                 await self.build_structure(unit_type, near)
 
     async def try_chrono_boost(self, target):
-        if target.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
+        if target.has_buff(BuffId.CHRONOBOOSTENERGYCOST) or target.is_idle:
             return
         for nexus in self.townhalls:
             abilities = await self.get_available_abilities(nexus)
@@ -163,14 +163,15 @@ class MyBot(sc2.BotAI):
         # speed up warpgate research first
         ccores = self.units(UnitTypeId.CYBERNETICSCORE).ready
         if ccores.exists:
-            ccore = ccores.first
-            if not ccore.is_idle:
-                await self.try_chrono_boost(ccore)
+            await self.try_chrono_boost(ccores.first)
+
+        # speed up zealot creation
+        for gateway in self.units(UnitTypeId.GATEWAY).ready:
+            await self.try_chrono_boost(gateway)
 
         # boost all building nexuses
         for nexus in self.townhalls:
-            if not nexus.is_idle:
-                await self.try_chrono_boost(nexus)
+            await self.try_chrono_boost(nexus)
 
     async def build_warpgates(self):
 
