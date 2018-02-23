@@ -28,6 +28,9 @@ class MyBot(sc2.BotAI):
         try:
             if iteration == 0:
                 await self.chat_send(f"{random.choice(trashtalk)}")
+
+                next_expansion = await self.get_next_expansion()
+                self.first_ramp_location = self.townhalls.first.position.towards(next_expansion, 15)
         except (Exception):
             pass
 
@@ -47,6 +50,7 @@ class MyBot(sc2.BotAI):
 
         try:
             await self.build_warpgates()
+            await self.spam_zealots()
             await self.spam_stalkers()
             await self.build_proxies()
         except (Exception):
@@ -200,6 +204,16 @@ class MyBot(sc2.BotAI):
                 if self.can_afford(UnitTypeId.PYLON):
                     await self.build(UnitTypeId.PYLON, near=exp)
                     self.attempted_proxy_locations.append(exp)
+
+    async def spam_zealots(self):
+        for gateway in self.units(UnitTypeId.GATEWAY).idle:
+            if self.can_afford(UnitTypeId.ZEALOT) and self.units(UnitTypeId.ZEALOT).amount < 10:
+                await self.do(gateway.train(UnitTypeId.ZEALOT))
+
+        for zealot in self.units(UnitTypeId.ZEALOT).idle:
+            if self.units(UnitTypeId.GATEWAY).closer_than(5.0, zealot).exists:
+                await self.do(zealot.move(self.first_ramp_location))
+
 
     async def spam_stalkers(self):
         if not self.units(UnitTypeId.PYLON).ready.exists:
