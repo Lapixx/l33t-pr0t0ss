@@ -215,12 +215,24 @@ class MyBot(sc2.BotAI):
                 await self.do(zealot.move(self.first_ramp_location))
 
 
+    def get_enemy_target(self):
+        enemy_units = self.known_enemy_units
+        if enemy_units.exists:
+            return enemy_units.first
+        return self.enemy_start_locations[0]
+
+    def get_enemy_base(self):
+        enemy_structures = self.known_enemy_structures
+        if enemy_structures.exists:
+            return enemy_structures.first
+        return self.enemy_start_locations[0]
+
     async def spam_stalkers(self):
         if not self.units(UnitTypeId.PYLON).ready.exists:
             return
 
         # find pylon closest to enemy
-        proxy = self.units(UnitTypeId.PYLON).ready.closest_to(self.enemy_start_locations[0])
+        proxy = self.units(UnitTypeId.PYLON).ready.closest_to(self.get_enemy_base())
         if proxy is None:
             return
 
@@ -242,7 +254,7 @@ class MyBot(sc2.BotAI):
         # attack when 10 stalkers are available
         if idle_stalkers.amount >= 10:
             for stalker in idle_stalkers:
-                await self.do(stalker.attack(self.enemy_start_locations[0]))
+                await self.do(stalker.attack(self.get_enemy_target()))
 
     async def get_closest_enemy_expansion(self):
         """Find next expansion location."""
