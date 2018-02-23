@@ -30,6 +30,7 @@ class MyBot(sc2.BotAI):
         await self.build_vespene()
         await self.expand()
         await self.build_strategy()
+        await self.build_cannons()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -95,14 +96,19 @@ class MyBot(sc2.BotAI):
         if not self.has_building(UnitTypeId.FORGE):
             await self.build_structure(self.units(UnitTypeId.NEXUS)[0], UnitTypeId.FORGE)
 
-        if self.has_building(UnitTypeId.FORGE):
-            await self.build_structure(self.units(UnitTypeId.NEXUS)[0], UnitTypeId.PHOTONCANNON)
-
     async def build_structure(self, near, building):
         if self.units(UnitTypeId.PYLON).ready.exists:
             pylon = self.units(UnitTypeId.PYLON).closest_to(near)
             if self.can_afford(building):
                 await self.build(building, near=pylon)
+
+    async def build_cannons(self):
+        if self.has_building(UnitTypeId.FORGE):
+            nexuses = self.townhalls
+            for nexus in nexuses:
+                pylons = self.units(UnitTypeId.PYLON).closer_than(8, nexus)
+                if len(pylons) is not 0 and len(self.units(UnitTypeId.PHOTONCANNON).closer_than(8, pylons.first)) <= 2:
+                    await self.build_structure(pylons.first, UnitTypeId.PHOTONCANNON)
 
     def has_building(self, unit_type):
         return self.already_pending(unit_type) or self.units(unit_type).ready.exists
