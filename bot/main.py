@@ -35,6 +35,7 @@ class MyBot(sc2.BotAI):
         await self.build_warpgates()
         await self.spam_stalkers()
         await self.build_cannons()
+        await self.handle_chrono_boost()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -121,6 +122,26 @@ class MyBot(sc2.BotAI):
         if not self.has_building(unit_type) and not self.already_pending(unit_type):
             if self.can_afford(unit_type):
                 await self.build_structure(unit_type, near)
+
+    async def try_chrono_boost(self, target):
+        if target.has_buff(BuffId.CHRONOBOOSTENERGYCOST):
+            return
+        for nexus in self.townhalls:
+            abilities = await self.get_available_abilities(nexus)
+            if AbilityId.EFFECT_CHRONOBOOSTENERGYCOST in abilities:
+                await self.do(nexus(AbilityId.EFFECT_CHRONOBOOSTENERGYCOST, target))
+                return
+
+    async def handle_chrono_boost(self):
+        # speed up warpgate research first
+        ccore = self.units(UnitTypeId.CYBERNETICSCORE).ready.first
+        if not ccore.is_idle:
+            await self.try_chrono_boost(ccore)
+
+        # boost all building nexuses
+        for nexus in self.townhalls:
+            if not nexus.is_idle:
+                await self.try_chrono_boost(nexus)
 
     async def build_warpgates(self):
 
