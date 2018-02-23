@@ -141,9 +141,11 @@ class MyBot(sc2.BotAI):
 
     async def handle_chrono_boost(self):
         # speed up warpgate research first
-        ccore = self.units(UnitTypeId.CYBERNETICSCORE).ready.first
-        if not ccore.is_idle:
-            await self.try_chrono_boost(ccore)
+        ccores = self.units(UnitTypeId.CYBERNETICSCORE).ready
+        if ccores.exists:
+            ccore = ccores.first
+            if not ccore.is_idle:
+                await self.try_chrono_boost(ccore)
 
         # boost all building nexuses
         for nexus in self.townhalls:
