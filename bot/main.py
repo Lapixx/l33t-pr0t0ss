@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import random
-
+import math
 import sc2
 from sc2.constants import *
 
@@ -27,7 +27,7 @@ class MyBot(sc2.BotAI):
         try:
             if iteration == 0:
                 await self.chat_send(f"{random.choice(trashtalk)}")
-
+                await self.get_random_expansion()
 
             await self.distribute_workers()
             await self.build_supply()
@@ -195,3 +195,26 @@ class MyBot(sc2.BotAI):
         if idle_stalkers.amount >= 10:
             for stalker in idle_stalkers:
                 await self.do(stalker.attack(self.enemy_start_locations[0]))
+
+    async def get_closest_enemy_expansion(self):
+        """Find next expansion location."""
+
+        closest = None
+        distance = math.inf
+        for el in self.expansion_locations:
+            def is_near_to_expansion(t):
+                return t.position.distance_to(el) < self.EXPANSION_GAP_THRESHOLD
+
+            if any(map(is_near_to_expansion, self.enemy_start_locations[0])):
+                # already taken
+                continue
+
+            th = self.townhalls.first
+            d = await self._client.query_pathing(self.enemy_start_locations[0], el)
+            if d is None:
+                continue
+
+            if d < distance:
+                distance = d
+                closest = el
+        return closest
