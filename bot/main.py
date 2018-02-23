@@ -4,25 +4,16 @@ from pathlib import Path
 import sc2
 from sc2.constants import *
 
-from sc2.position import Point2
-
 class MyBot(sc2.BotAI):
     with open(Path(__file__).parent / "../botinfo.json") as f:
         NAME = json.load(f)["name"]
 
+    def __init__(self):
+        self.warpgate_research_started = False
+
     async def on_step(self, iteration):
         if iteration == 0:
             await self.chat_send(f"I'd call you a tool, but that would imply you were useful in at least one way.")
-
-            # available_workers = self.workers
-            #
-            # for location in self.enemy_start_locations:
-            #     if len(available_workers) > 0:
-            #         await self.do(available_workers.pop().move(location))
-            #
-            # for location in self.expansion_locations:
-            #     if len(available_workers) > 0:
-            #         await self.do(available_workers.pop().move(location))
 
         await self.distribute_workers()
         await self.build_supply()
@@ -30,6 +21,7 @@ class MyBot(sc2.BotAI):
         await self.build_vespene()
         await self.expand()
         await self.build_strategy()
+        await self.build_warpgates()
 
     async def build_workers(self):
         allowed_excess = 4
@@ -106,3 +98,29 @@ class MyBot(sc2.BotAI):
 
     def has_building(self, unit_type):
         return self.already_pending(unit_type) or self.units(unit_type).ready.exists
+
+    async def build_if_missing(self, unit_type, near):
+        if not self.has_building(unit_type) and not self.already_pending(unit_type):
+            if self.can_afford(unit_type):
+                await self.build_structure(near, unit_type)
+
+    async def build_warpgates(self):
+
+        # create gateways (first 1, then cybernetics, then 2, then warpgate research, then 4)
+        total_gates = self.units(UnitTypeId.GATEWAY).amount + self.units(UnitTypeId.WARPGATE).amount
+        desired_gates = (4 if self.warpgate_research_started else 2) if self.has_building(UnitTypeId.CYBERNETICSCORE) else 1
+        if self.can_afford(UnitTypeId.GATEWAY) and total_gates < desired_gates:
+            await self.build(UnitTypeId.GATEWAY, near=self.townhalls.first)
+
+        # research warpgate
+        await self.build_if_missing(UnitTypeId.CYBERNETICSCORE, self.townhalls.first)
+        if self.units(UnitTypeId.CYBERNETICSCORE).ready.exists and self.can_afford(AbilityId.RESEARCH_WARPGATE) and not self.warpgate_research_started:
+            ccore = self.units(UnitTypeId.CYBERNETICSCORE).ready.first
+            await self.do(ccore(AbilityId.RESEARCH_WARPGATE))
+            self.warpgate_research_started = True
+
+        # morph to gateways to warpgates
+        for gateway in self.units(UnitTypeId.GATEWAY).ready:
+            abilities = await self.get_available_abilities(gateway)
+            if AbilityId.MORPH_WARPGATE in abilities and self.can_afford(AbilityId.MORPH_WARPGATE):
+                await self.do(gateway(AbilityId.MORPH_WARPGATE))
