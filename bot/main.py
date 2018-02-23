@@ -40,7 +40,6 @@ class MyBot(sc2.BotAI):
         await self.expand()
         await self.build_strategy()
         await self.build_cannons()
-        await self.upgrade_weapons()
 
     async def build_workers(self):
         allowed_excess = 4
