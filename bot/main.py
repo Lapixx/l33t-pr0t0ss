@@ -107,9 +107,9 @@ class MyBot(sc2.BotAI):
 
     async def build_warpgates(self):
 
-        # create gateways (first 1, then cybernetics, then 2, then warpgate research, then 4)
+        # create gateways (first 1, then cybernetics, then warpgate research, then 4)
         total_gates = self.units(UnitTypeId.GATEWAY).amount + self.units(UnitTypeId.WARPGATE).amount
-        desired_gates = (4 if self.warpgate_research_started else 2) if self.has_building(UnitTypeId.CYBERNETICSCORE) else 1
+        desired_gates = 4 if self.warpgate_research_started else 1
         if self.can_afford(UnitTypeId.GATEWAY) and total_gates < desired_gates:
             await self.build(UnitTypeId.GATEWAY, near=self.townhalls.first)
 
